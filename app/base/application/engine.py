@@ -1,4 +1,3 @@
-import sys
 from typing import List
 from ..abstract import IEngine, IModel
 
