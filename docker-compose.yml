@@ -1,0 +1,18 @@
+version: '3'  
+services:
+  ainterview-processor:
+    image: ainterview-processor-image
+    container_name: ainterview-processor-container
+    build:
+      context: ./
+      args:
+        - INSTANCE=processor
+    ports:
+      - "8000:8000"
+    volumes:
+      - /home/storage:/vol/storage
+    networks:
+      - ainterview_network
+networks:
+  ainterview_network:
+     external: true
