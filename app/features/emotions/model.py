@@ -13,7 +13,7 @@ class FaceEmotionRecognitionModel(IModel):
     def __init__(self):
         self.face_classifier = cv2.CascadeClassifier(RESOURCE_FACE_CLASSIFIER)
         self.emotion_classifier = load_model(RESOURCE_EMOTION_CLASSIFIER)
-        self.labels = ['Angry', 'Happy', 'Neutral', 'Sad', 'Surprise']
+        self.labels = ['Enojad@', 'Feliz', 'Normal', 'Triste', 'Sorprendid@']
 
     def update(self, frame: bytes) -> None:
         image = np.fromstring(frame, dtype=np.uint8)

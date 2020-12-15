@@ -8,10 +8,10 @@ from app.base.application import ModelEngine
 from app.features.emotions import FaceEmotionRecognitionModel
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'secret!'
+app.config['SECRET_KEY'] = 'secret'
+app.debug = True
 
 io = SocketIO(app, cors_allowed_origins="*")
-
 engine = ModelEngine()
 
 
@@ -36,4 +36,6 @@ def handle_frame(payload):
 
 if __name__ == 'server':
     engine.attach(FaceEmotionRecognitionModel())
+
+if __name__ == '__main__':
     io.run(app)
