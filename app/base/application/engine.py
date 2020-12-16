@@ -1,5 +1,6 @@
 from typing import List
 from ..abstract import IEngine, IModel
+from .result import ResultProcess
 
 
 class ModelEngine(IEngine):
@@ -20,6 +21,8 @@ class ModelEngine(IEngine):
     more comprehensively (categorized by event type, etc.).
     """
 
+    __results: List[ResultProcess] = []
+
     def attach(self, observer: IModel) -> None:
         self.__observers.append(observer)
 
@@ -35,7 +38,9 @@ class ModelEngine(IEngine):
         Trigger an update in each subscriber.
         """
         for observer in self.__observers:
-            observer.update(self.__frame)
+            result: ResultProcess = observer.update(self.__frame)
+            if result is not None:
+                self.__results.append(result)
 
     def process(self, frame: bytes) -> None:
         """
@@ -44,3 +49,11 @@ class ModelEngine(IEngine):
         """
         self.__frame = frame
         self.notify()
+
+    def results(self) -> List[ResultProcess]:
+        """
+        Method that return the results
+        """
+        returnable = self.__results.copy()
+        self.__results.clear()
+        return returnable

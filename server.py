@@ -1,5 +1,6 @@
 import sys
 import base64
+import json
 
 from flask import Flask
 from flask_socketio import SocketIO
@@ -30,6 +31,8 @@ def handle_frame(payload):
     if frame is not None:
         image = base64.b64decode(frame)
         engine.process(image)
+        io.emit("results", json.dumps([result.__dict__ for result in engine.results()]))
+        print("Results: ", engine.results())
     else:
         print('Skipped frame...', file=sys.stdout)
 

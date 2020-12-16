@@ -1,11 +1,10 @@
-import sys
-
 import cv2
 import numpy as np
 from keras.models import load_model
 from keras.preprocessing.image import img_to_array
 
 from app.base.abstract import IModel
+from app.base.application import ResultProcess
 from .config import RESOURCE_FACE_CLASSIFIER, RESOURCE_EMOTION_CLASSIFIER
 
 
@@ -15,7 +14,7 @@ class FaceEmotionRecognitionModel(IModel):
         self.emotion_classifier = load_model(RESOURCE_EMOTION_CLASSIFIER)
         self.labels = ['Enojad@', 'Feliz', 'Normal', 'Triste', 'Sorprendid@']
 
-    def update(self, frame: bytes) -> None:
+    def update(self, frame: bytes) -> ResultProcess:
         image = np.fromstring(frame, dtype=np.uint8)
         image = cv2.imdecode(image, 1)
         image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -32,4 +31,7 @@ class FaceEmotionRecognitionModel(IModel):
                 face = np.expand_dims(face, axis=0)
 
                 prediction = self.emotion_classifier.predict(face)[0]
-                print("Emotion: ", self.labels[prediction.argmax()], file=sys.stdout)
+                result: ResultProcess = ResultProcess()
+                result.model = __name__
+                result.concept = self.labels[prediction.argmax()]
+                return result
