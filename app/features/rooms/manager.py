@@ -11,27 +11,29 @@ class Room:
 
 
 class RoomsManager:
-    rooms: List[Room]
-
-    def __init__(self):
-        self.rooms = []
+    def __init__(self, room_model, db):
+        self.model = room_model
+        self.connection = db
 
     def join(self, sid_participant: str, sid_room: str) -> None:
-        participant = Session()
-        participant.id = sid_participant
+        room = self.model.query.filter_by(code=sid_room).first()
 
-        filtered = [room for room in self.rooms if room.id == sid_room]
-        if len(filtered) > 0:
-            filtered[0].participants.append(participant)
-        else:
-            room = Room()
-            room.id = sid_room
-            room.participants.append(participant)
+        if room is not None:
+            if len(room.participants) > 0:
+                room.participants.append(sid_participant)
+                self.connection.session.commit()
+                return
 
-    def participants(self, sid_room) -> List[Session]:
-        filtered = [room for room in self.rooms if room.id == sid_room]
-        if len(filtered) > 0:
-            return filtered[0].participants
-        else:
-            return []
+        room = self.model(sid_room, [sid_participant])
+        self.connection.session.add(room)
+        self.connection.session.commit()
 
+    def participants(self, sid_room):
+        room = self.model.query.filter_by(code=sid_room).first()
+
+        if room is not None:
+            if len(room.participants) > 0:
+                return room.participants
+            else:
+                return []
+        return []
