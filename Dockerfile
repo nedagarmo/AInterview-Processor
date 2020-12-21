@@ -6,6 +6,7 @@ ENV FLASK_ENV=production
 
 WORKDIR /usr/src/app
 RUN pip install --upgrade pip
+RUN apt-get install ffmpeg libsm6 libxext6  -y
 
 # Installing requirements for application.
 COPY requirements.txt ./
