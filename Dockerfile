@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD [ "flask", "run" ]
+CMD [ "flask", "run", "-h", "0.0.0.0" ]
