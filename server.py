@@ -1,17 +1,18 @@
-import os
-import sys
 import base64
 import json
+import os
+import sys
 
-from flask import Flask, request
+from flask import Flask
 from flask_migrate import Migrate
-from flask_socketio import SocketIO, join_room
+from flask_socketio import SocketIO, join_room, emit
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.dialects import postgresql
 
 from app.base.application import ModelEngine
 from app.features.emotions import FaceEmotionRecognitionModel
 from app.features.rooms import RoomsManager
-from app.settings import NAMESPACE, DATABASE
+from app.settings import DATABASE
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
@@ -29,7 +30,7 @@ class Room(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String())
-    participants = db.Column(db.JSON)
+    participants = db.Column(postgresql.JSONB)
 
     def __init__(self, code, participants):
         self.code = code
@@ -44,29 +45,43 @@ rooms = RoomsManager(Room, db)
 
 @io.on("join")
 def handle_join(payload):
-    print("Connection message: ", payload, file=sys.stdout)
     token = payload.get("token")
     room = payload.get("room")
+    log('Received request to create or join room ' + payload.get("room"))
 
     participants = len(rooms.participants(room))
-    print("Participants:", rooms.participants(room), file=sys.stdout)
+    log('Room ' + room + ' now has ' + str(participants) + ' client(s)')
+
     if participants == 0:
         join_room(room)
         rooms.join(token, room)
-        io.emit("created", room)
+        log('Client ID ' + str(token) + ' created room ' + room)
+        emit("created", room)
     elif participants == 1:
+        log('Client ID ' + str(token) + ' joined room ' + room)
         join_room(room)
-        io.emit('join', room)
         rooms.join(token, room)
-        io.emit('joined', room)
-        io.emit('ready', room=room)
+        emit('joined', room)
+        emit('join', room, room=room, include_self=False)
     else:
-        io.emit('full', room)
+        emit('full', room)
+
+
+def log(*args):
+    array = ['Message from server:']
+    array.extend(args)
+    emit('log', array)
 
 
 @io.on("message")
-def handle_message(message):
-    io.emit('message', message, broadcast=True)
+def handle_message(payload):
+    token = payload.get("token", None)
+    room = rooms.get_room(token)
+    log('message to room: ', room)
+    if room is not None:
+        message = payload.get("message", None)
+        log('Client said: ', message)
+        emit('message', message, room=room)
 
 
 @io.on("frame")
@@ -84,7 +99,7 @@ def handle_frame(payload):
     if frame is not None:
         image = base64.b64decode(frame)
         engine.process(image)
-        io.emit("results", json.dumps([result.__dict__ for result in engine.results()]))
+        emit("results", json.dumps([result.__dict__ for result in engine.results()]))
     else:
         print('Skipped frame...', file=sys.stdout)
 

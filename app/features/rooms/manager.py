@@ -1,4 +1,7 @@
+import sys
 from typing import List
+
+from sqlalchemy.orm.attributes import flag_modified
 
 
 class Session:
@@ -21,6 +24,9 @@ class RoomsManager:
         if room is not None:
             if len(room.participants) > 0:
                 room.participants.append(sid_participant)
+                flag_modified(room, "participants")
+                self.connection.session.merge(room)
+                self.connection.session.flush()
                 self.connection.session.commit()
                 return
 
@@ -28,7 +34,7 @@ class RoomsManager:
         self.connection.session.add(room)
         self.connection.session.commit()
 
-    def participants(self, sid_room):
+    def participants(self, sid_room) -> []:
         room = self.model.query.filter_by(code=sid_room).first()
 
         if room is not None:
@@ -37,3 +43,11 @@ class RoomsManager:
             else:
                 return []
         return []
+
+    def get_room(self, token):
+        room = self.model.query.filter(self.model.participants.contains([token])).first()
+
+        if room is not None:
+            return room.code
+
+        return None
