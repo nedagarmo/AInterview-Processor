@@ -32,6 +32,6 @@ class FaceEmotionRecognitionModel(IModel):
 
                 prediction = self.emotion_classifier.predict(face)[0]
                 result: ResultProcess = ResultProcess()
-                result.model = __name__
+                result.model = "Expresión Facial"
                 result.concept = self.labels[prediction.argmax()]
                 return result
